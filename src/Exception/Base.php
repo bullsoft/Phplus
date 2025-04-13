@@ -3,7 +3,6 @@
 namespace Bullsoft\Phplus\Exception;
 
 use Exception as PhpException;
-use Phalcon\Exception as PhException;
 use Bullsoft\Phplus\Sys;
 use Phalcon\Logger\Logger as PhLogger;
 
@@ -28,11 +27,14 @@ class Base extends PhpException
                 $message .= ", message: " . $info;
             }
         }
-
-        if(Sys::app()->isBooted() && Sys::app()->di()->has("logger")) {
-            $logger = Sys::app()->di()->get("logger");
-            $argsJson = json_encode($args, \JSON_UNESCAPED_UNICODE);
-            $logger->log($this->getLevel(), $message . ", args: ". $argsJson);
+        try {
+            if(Sys::app()->isBooted() && Sys::app()->di()->has("logger")) {
+                $logger = Sys::app()->di()->get("logger");
+                $argsJson = json_encode($args, \JSON_UNESCAPED_UNICODE);
+                $logger->log($this->getLevel(), $message . ", args: ". $argsJson);
+            }
+        } catch(PhpException $e) {
+            // nothing...
         }
 
         $showMessage = $info["text"] ?? ($this->message ?? $message);
@@ -62,5 +64,23 @@ class Base extends PhpException
     public function getInfo()
     {
         return $this->info;
+    }
+
+    /**
+     * 
+     * 
+     * $info = "letter A is for Amy";
+     * 
+     * $info = ["letter A is for Amy", ["Amy"]];
+     * 
+     * $info = ["letter A is for Amy", 
+     *          "text" => "字母A代表%s", 
+     *          "args" => ["Amy"]
+     *         ];
+     * 
+     */
+    public static function throw($info = "", int $code = 1)
+    {
+        throw new self($info, $code);
     }
 }

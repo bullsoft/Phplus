@@ -13,7 +13,6 @@ use Phalcon\Di\DiInterface as PhDiInterface;
 final class App extends AbstractApp
 {
     // 默认运行环境
-    // 其实框架定义了<\PhalconPlus\Enum\RunEnv>，但考虑再三，此处不能做枚举限制
     // Enum: ['dev', 'test', 'pre-production', 'production']
     protected $env = RunEnv::DEV;
     // Booted flag
@@ -38,6 +37,7 @@ final class App extends AbstractApp
         define("APP_ROOT_COMMON_DIR", Sys::getCommonDir());
         define("APP_ROOT_COMMON_LOAD_DIR", Sys::getGlobalLoadDir());
         define("APP_ROOT_COMMON_CONF_DIR", Sys::getGlobalConfigDir());
+        define("PHPLUS_DIR", Sys::getLibraryDir());
 
         return $this->bootPrimaryModule();
     }

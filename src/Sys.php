@@ -19,8 +19,9 @@ final class Sys
     public const EXT = ".php";
     public const ENV_NAME = "phplus.env";
 
-    private static string $rootDir = ""; // without trailing /
-    private static string $primaryModuleDir = ""; // without trailing /
+    private static string $libDir  = ""; // without trailing slash(/)
+    private static string $rootDir = ""; // without trailing slash(/)
+    private static string $primaryModuleDir = ""; // without trailing slash(/)
 
     private static ?App $app = null;
 
@@ -36,6 +37,7 @@ final class Sys
                     $moduleDir
             );
         }
+        self::$libDir = dirname(__DIR__);
         self::$primaryModuleDir = $moduleDir;
         self::$rootDir = dirname($moduleDir);
     }
@@ -72,6 +74,11 @@ final class Sys
         return self::$app;
     }
 
+    public static function getLibraryDir(): string
+    {
+        return self::$libDir;
+    }
+
     // -> {APP_MODULE_DIR}
     public static function getPrimaryModuleDir(): string
     {
@@ -84,38 +91,38 @@ final class Sys
         return self::$rootDir;
     }
 
-    // -> {APP_ROOT_DIR}/common
+    // -> {PHPLUS_DIR}/common
     public static function getCommonDir(): string
     {
-        return implode(Sys::DS, [self::$rootDir, Sys::COMMON_NAME]);
+        return implode(Sys::DS, [self::$libDir, Sys::COMMON_NAME]);
     }
 
-    // -> {APP_ROOT_DIR}/common/config
+    // -> {PHPLUS_DIR}/common/config
     public static function getGlobalConfigDir(): string
     {
         return implode(Sys::DS, [
-            self::$rootDir,
+            self::$libDir,
             Sys::COMMON_NAME,
             Sys::CONF_NAME,
         ]);
     }
 
-    // -> {APP_ROOT_DIR}/common/config/config.php
+    // -> {PHPLUS_DIR}/common/config/config.php
     public static function getGlobalConfigPath(): string
     {
         return implode(Sys::DS, [
-            self::$rootDir,
+            self::$libDir,
             Sys::COMMON_NAME,
             Sys::CONF_NAME,
             Sys::CONF_NAME . Sys::EXT,
         ]);
     }
 
-    // -> {APP_ROOT_DIR}/common/load
+    // -> {PHPLUS_DIR}/common/load
     public static function getGlobalLoadDir(): string
     {
         return implode(Sys::DS, [
-            self::$rootDir,
+            self::$libDir,
             Sys::COMMON_NAME,
             Sys::LOAD_NAME,
         ]);
@@ -186,7 +193,7 @@ final class Sys
         if (!is_file($filePath)) {
             throw new PhpException(
                 "The file you try to load is not exists. The Path is: " .
-                    filePath
+                    $filePath
             );
         }
 
@@ -196,11 +203,13 @@ final class Sys
 
         // Visiable Variables
         // $root           -- dir of the app
+        // $phplusDir      -- dir of the Phplus library
         // $di             -- global di container
         // $config         -- the Phalcon\Config\Config object
         // $app            -- app object
         // $loader         -- Phalcon\Loader object
-        $root = Sys::getRootDir();
+        $root = self::$rootDir;
+        $phplusDir = self::$libDir;
         if (null !== self::$app) {
             $app = self::$app;
             if ($app->isBooted()) {

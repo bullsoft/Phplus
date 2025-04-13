@@ -14,5 +14,8 @@
             "email": "guweigang@bullsoft.org"
         }
     ],
-    "require": {}
+    "require": {},
+    "bin": [
+        "bin/phplus"
+    ]
 }
