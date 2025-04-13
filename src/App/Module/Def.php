@@ -1,7 +1,7 @@
 <?php
 namespace Bullsoft\Phplus\App\Module;
 
-use Phalcon\Di\Di;
+use Phalcon\Di\DiInterface;
 use Phalcon\Config\Config as PhConfig;
 use Phalcon\Di\FactoryDefault as DefaultDi;
 use Phalcon\Di\FactoryDefault\CLI as TaskDi;
@@ -9,10 +9,10 @@ use Phalcon\Di\FactoryDefault\CLI as TaskDi;
 use Bullsoft\Phplus\Sys;
 use Bullsoft\Phplus\Enum\RunMode;
 use Bullsoft\Phplus\Exception\Base as BaseException;
-
+use Phalcon\Di\Injectable as PhDiInjectable;
 use \Exception as PhpException;
 
-class Def
+class Def extends PhDiInjectable
 {
     protected string $classPath = "";
     protected string $className = "";
@@ -20,9 +20,9 @@ class Def
     protected string $configPath = "";
     protected string $dir = "";
 
-    // <\Phalcon\Config>
+    // <\Phalcon\Config\Config>
     protected PhConfig $config;
-    // <\PhalconPlus\Enum\RunMode>
+    // <Bullsoft\Phplus\Enum\RunMode>
     protected RunMode $runMode;
 
     // Is this a primary-module? false for default
@@ -61,16 +61,26 @@ class Def
         }
     }
 
-    public function newDi(): Di
+    public function newDi(): DiInterface
     {
-        $di = null;
-        if($this->runMode->isCli()) {
-            $di = new TaskDi();
-        } else {
-            $di = new DefaultDi();
+        if(!$this->isPrimary()) {
+            throw new BaseException("Only primary module can have DenpendencyInjection");
         }
-        $di->setInternalEventsManager($di->get("eventsManager"));
-        return $di;
+        if(null !== $this->container) {
+            return $this->container;
+        }
+        if($this->runMode->isCli()) {
+            $this->container = new TaskDi();
+        } else {
+            $this->container = new DefaultDi();
+        }
+        $this->container->setInternalEventsManager($this->container->get("eventsManager"));
+        return $this->container;
+    }
+
+    public function di(): ?DiInterface
+    {
+        return $this->container;
     }
 
     public function checkout(): AbstractModule
@@ -101,13 +111,13 @@ class Def
         $module = new $className(Sys::app(), $this);
 
         if($this->isPrimary()) {
-            Sys::app()->di()->setShared("defaultModule", $module);
+            $this->di->setShared("defaultModule", $module);
         }
 
         // Register autoloaders and di-services
-        $module->registerAutoloaders(Sys::app()->di());
-        $module->registerServices(Sys::app()->di());
-        $module->registerEvents(Sys::app()->di());
+        $module->registerAutoloaders($this->di);
+        $module->registerServices($this->di);
+        $module->registerEvents($this->di);
 
         return $module;
     }
@@ -177,12 +187,17 @@ class Def
         return $this->runMode->getClass();
     }
 
-    public function mode(): string
+    public function mode(): RunMode
     {
-        return $this->runMode->value;
+        return $this->runMode;
     }
 
-    public function getMode(): string
+    public function getMode(): RunMode
+    {
+        return $this->runMode;
+    }
+
+    public function getModeValue(): string
     {
         return $this->runMode->value;
     }

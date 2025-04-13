@@ -47,14 +47,13 @@ final class App extends AbstractApp
     private function bootPrimaryModule(): static
     {
         $primaryModuelDef = new ModuleDef(Sys::getPrimaryModuleDir(), true);
-        if($this->container === null) {
-            $di = $primaryModuelDef->newDi();
-            $di->setShared("app", $this);
-            $di->setShared("config", $this->config);
-            $di->setShared("loader", new PhLoader());
-            $this->eventsManager = $di->get("eventsManager");
-            $this->setDI($di);
-        }
+        $di = $primaryModuelDef->newDi();
+        $di->setShared("app", $this);
+        $di->setShared("config", $this->config);
+        $di->setShared("loader", new PhLoader());
+        $this->eventsManager = $di->get("eventsManager");
+        $this->setDI($di);
+
         $this->booted = true;
         $this->registerModule($primaryModuelDef);
         return $this;
@@ -67,7 +66,7 @@ final class App extends AbstractApp
         }
         if($def->isPrimary()) {
             if(!defined("APP_RUN_MODE")) {
-                define("APP_RUN_MODE", $def->getMode(), false);
+                define("APP_RUN_MODE", $def->getModeValue(), false);
             }
             // 合并主模块的配置
             $this->config->merge($def->getConfig());

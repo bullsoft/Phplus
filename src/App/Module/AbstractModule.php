@@ -42,6 +42,7 @@ abstract class AbstractModule extends PhDiInjectable implements PhModuleDef
         }
         
         $moduleDef = new ModuleDef(Sys::getModuleDirByName($name), false);
+        $moduleDef->setDI($this->container);
         if($force === false) {
             if($moduleDef->config()->path("application.exportable", false) == false) {
                 throw new BaseException("{$name} can't be imported as external library.");
