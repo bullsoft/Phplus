@@ -26,15 +26,13 @@ final class App extends AbstractApp
     // 需要手动关闭的服务 []callable，一般是有状态服务，如Mysql、Redis等
     protected array $finalizers = [];
 
-    public function __construct(protected PhConfig $config)
-    {
-    }
+    public function __construct(protected PhConfig $config) {}
 
     public function boot(RunEnv $env): static
     {
         $this->env = $env;
         // define global constants
-        define("APP_RUN_ENV",  $this->env->value);
+        define("APP_RUN_ENV", $this->env->value);
         define("APP_ROOT_DIR", Sys::getRootDir());
         define("APP_PRI_MODULE_DIR", Sys::getPrimaryModuleDir());
         define("APP_ROOT_COMMON_DIR", Sys::getCommonDir());
@@ -61,20 +59,20 @@ final class App extends AbstractApp
 
     public function registerModule(ModuleDef $def): AbstractModule
     {
-        if(isset($this->modules[$def->name()])) {
+        if (isset($this->modules[$def->name()])) {
             return $this->modules[$def->name()];
         }
-        if($def->isPrimary()) {
-            if(!defined("APP_RUN_MODE")) {
+        if ($def->isPrimary()) {
+            if (!defined("APP_RUN_MODE")) {
                 define("APP_RUN_MODE", $def->getModeValue(), false);
             }
             // 合并主模块的配置
             $this->config->merge($def->getConfig());
             $this->setDefaultModule($def->name());
         }
-        $module = $def->checkout();
-        $this->modules[$def->name()] = $module;
-        return $module;
+        $moduleObj = $def->checkout();
+        $this->modules[$def->name()] = $moduleObj;
+        return $moduleObj;
     }
 
     public function getModule(string $name)
@@ -112,7 +110,7 @@ final class App extends AbstractApp
     public function handle()
     {
         $this->requestNumber++;
-        if(false === $this->booted) {
+        if (false === $this->booted) {
             $this->bootPrimaryModule();
         }
 
@@ -120,14 +118,24 @@ final class App extends AbstractApp
         $params = func_get_args();
         $eventManager = $this->eventsManager;
 
-        $defaultModule = $this->modules[$this->defaultModule];
+        $defaultModuleObj = $this->modules[$this->defaultModule];
 
-        if($eventManager->fire("app:beforeExecModule", $this, [$defaultModule, $params]) === false) {
+        if (
+            $eventManager->fire("app:beforeExecModule", $this, [
+                $defaultModuleObj,
+                $params,
+            ]) === false
+        ) {
             return false;
         }
 
-        $response = $defaultModule->exec($params);
-        if($eventManager->fire("app:afterExecModule", $this, [$defaultModule, $response])) {
+        $response = $defaultModuleObj->exec($params);
+        if (
+            $eventManager->fire("app:afterExecModule", $this, [
+                $defaultModuleObj,
+                $response,
+            ])
+        ) {
             return false;
         }
 
@@ -143,24 +151,31 @@ final class App extends AbstractApp
     public function terminate(bool $deeply = true)
     {
         // Close Session here
-        if(session_status() == \PHP_SESSION_ACTIVE) {
+        if (session_status() == \PHP_SESSION_ACTIVE) {
             session_write_close();
         }
 
         // Empty Session-Id
-        if(!headers_sent()) session_id("");
+        if (!headers_sent()) {
+            session_id("");
+        }
 
         // Reset global variables
-        $_SESSION = []; $_POST = []; $_GET = []; $_SERVER = []; 
-        $_REQUEST = []; $_COOKIE = []; $_FILES = [];
+        $_SESSION = [];
+        $_POST = [];
+        $_GET = [];
+        $_SERVER = [];
+        $_REQUEST = [];
+        $_COOKIE = [];
+        $_FILES = [];
 
-        foreach($this->modules as $_ => $moduleObj) {
+        foreach ($this->modules as $_ => $moduleObj) {
             unset($moduleObj);
         }
         $this->defaultModule = "";
         $this->booted = false;
 
-        foreach($this->finalizers as $finalizer) {
+        foreach ($this->finalizers as $finalizer) {
             $finalizer();
         }
         $this->finalizers = [];
@@ -168,7 +183,7 @@ final class App extends AbstractApp
         // Clear request number
         $this->requestNumber = 0;
         // Reset Dependency Injector
-        if($deeply) {
+        if ($deeply) {
             $this->di()->reset();
             $this->container = null;
         }
@@ -186,12 +201,12 @@ final class App extends AbstractApp
 
     public function __call(string $method, array $params)
     {
-        if(!$this->isBooted()) {
-            return ;
+        if (!$this->isBooted()) {
+            return;
         }
-        if($this->container->has($method)) {
+        if ($this->container->has($method)) {
             return $this->container->get($method, $params);
         }
-        return ;
+        return;
     }
 }

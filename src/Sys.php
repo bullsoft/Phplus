@@ -10,29 +10,31 @@ final class Sys
 {
     // 定义类常量
     public const COMMON_NAME = "common";
-    public const CONF_NAME   = "config";
-    public const LOAD_NAME   = "load";
-    public const PUB_NAME    = "public";
-    public const APP_NAME    = "app";
+    public const CONF_NAME = "config";
+    public const LOAD_NAME = "load";
+    public const PUB_NAME = "public";
+    public const APP_NAME = "app";
 
     public const DS = \DIRECTORY_SEPARATOR;
     public const EXT = ".php";
     public const ENV_NAME = "phplus.env";
 
-    private static string $rootDir = "";  // without trailing /
+    private static string $rootDir = ""; // without trailing /
     private static string $primaryModuleDir = ""; // without trailing /
 
-    private static array $requiredFiles = [];
     private static ?App $app = null;
 
     public static function init(string $moduleDir): void
     {
-        if(!empty(self::$primaryModuleDir)) {
-            return ;
+        if (!empty(self::$primaryModuleDir)) {
+            return;
         }
         $moduleDir = rtrim($moduleDir, Sys::DS);
-        if(!is_dir($moduleDir)) {
-            throw new BaseException("Module directory not exists or not a dir, file positon: " . $moduleDir);
+        if (!is_dir($moduleDir)) {
+            throw new BaseException(
+                "Module directory not exists or not a dir, file positon: " .
+                    $moduleDir
+            );
         }
         self::$primaryModuleDir = $moduleDir;
         self::$rootDir = dirname($moduleDir);
@@ -44,7 +46,7 @@ final class Sys
         $globalConfig = null;
         try {
             $globalConfig = new PhConfig(Sys::load($globalConfigPath));
-        } catch(PhpException $e) {
+        } catch (PhpException $e) {
             $globalConfig = new PhConfig([]);
             trigger_error("Global config file not exists: " . $e->getMessage());
         }
@@ -54,7 +56,7 @@ final class Sys
     public static function start(): App
     {
         // Initial only once
-        if(self::$app === null) {
+        if (self::$app === null) {
             self::$app = new App(Sys::initConfig());
         }
         // 加载Facacdes
@@ -64,7 +66,7 @@ final class Sys
 
     public static function app(): App
     {
-        if(self::$app == null) {
+        if (self::$app == null) {
             throw new PhpException("SuperApp has no instances yet");
         }
         return self::$app;
@@ -85,10 +87,7 @@ final class Sys
     // -> {APP_ROOT_DIR}/common
     public static function getCommonDir(): string
     {
-        return implode(Sys::DS, [
-            self::$rootDir,
-            Sys::COMMON_NAME
-        ]);
+        return implode(Sys::DS, [self::$rootDir, Sys::COMMON_NAME]);
     }
 
     // -> {APP_ROOT_DIR}/common/config
@@ -97,7 +96,7 @@ final class Sys
         return implode(Sys::DS, [
             self::$rootDir,
             Sys::COMMON_NAME,
-            Sys::CONF_NAME
+            Sys::CONF_NAME,
         ]);
     }
 
@@ -108,7 +107,7 @@ final class Sys
             self::$rootDir,
             Sys::COMMON_NAME,
             Sys::CONF_NAME,
-            Sys::CONF_NAME . Sys::EXT
+            Sys::CONF_NAME . Sys::EXT,
         ]);
     }
 
@@ -118,17 +117,14 @@ final class Sys
         return implode(Sys::DS, [
             self::$rootDir,
             Sys::COMMON_NAME,
-            Sys::LOAD_NAME
+            Sys::LOAD_NAME,
         ]);
     }
 
     // -> {APP_ROOT_DIR}/{moduleName}
     public static function getModuleDirByName(string $moduleName): string
     {
-        return implode(Sys::DS, [
-            self::$rootDir,
-            $moduleName
-        ]);
+        return implode(Sys::DS, [self::$rootDir, $moduleName]);
     }
 
     // foo/bar/baz -> baz
@@ -138,12 +134,14 @@ final class Sys
     }
 
     // {moduleDir}/app/{modeName}.php
-    public static function getModuleClassPath(string $moduleDir, string $modeName)
-    {
+    public static function getModuleClassPath(
+        string $moduleDir,
+        string $modeName
+    ) {
         return implode(Sys::DS, [
             $moduleDir,
             Sys::APP_NAME,
-            $modeName . Sys::EXT
+            $modeName . Sys::EXT,
         ]);
     }
 
@@ -155,18 +153,24 @@ final class Sys
             $moduleDir,
             Sys::APP_NAME,
             Sys::CONF_NAME,
-            APP_RUN_ENV . Sys::EXT
+            APP_RUN_ENV . Sys::EXT,
         ]);
-        if(!is_file($confPath)) {
+        if (!is_file($confPath)) {
             $confPath = implode(Sys::DS, [
                 $moduleDir,
                 Sys::APP_NAME,
                 Sys::CONF_NAME,
-                Sys::CONF_NAME . Sys::EXT
+                Sys::CONF_NAME . Sys::EXT,
             ]);
         }
-        if(!is_file($confPath)) {
-            throw new BaseException("Module Config file not exists: " . $confPath . " & " . APP_RUN_ENV . self::EXT);
+        if (!is_file($confPath)) {
+            throw new BaseException(
+                "Module Config file not exists: " .
+                    $confPath .
+                    " & " .
+                    APP_RUN_ENV .
+                    self::EXT
+            );
         }
         return $confPath;
     }
@@ -174,32 +178,38 @@ final class Sys
     // -> {APP_ROOT_DIR}/vendor/autoload.php
     public static function getComposerAutoloadPath()
     {
-        return implode(Sys::DS, [
-            self::$rootDir,
-            "vendor",
-            "autoload.php"
-        ]);
+        return implode(Sys::DS, [self::$rootDir, "vendor", "autoload.php"]);
     }
 
     public static function load(string $filePath, array $context = [])
     {
-        if(!is_file($filePath)) {
-            throw new PhpException("The file you try to load is not exists. The Path is: " . filePath);
+        if (!is_file($filePath)) {
+            throw new PhpException(
+                "The file you try to load is not exists. The Path is: " .
+                    filePath
+            );
         }
 
-        if(in_array($filePath, get_included_files()))  return ;
+        if (in_array($filePath, get_included_files())) {
+            return;
+        }
 
-        // root, config, superapp, di, loader
+        // Visiable Variables
+        // $root           -- dir of the app
+        // $di             -- global di container
+        // $config         -- the Phalcon\Config\Config object
+        // $app            -- app object
+        // $loader         -- Phalcon\Loader object
         $root = Sys::getRootDir();
-        if(null !== self::$app) {
-            $config = self::$app->config();
-            if(self::$app->isBooted()) {
-                $app = self::$app;
+        if (null !== self::$app) {
+            $app = self::$app;
+            if ($app->isBooted()) {
+                $config = $app->config();
                 $di = $app->di();
                 $loader = $di->get("loader");
             }
         }
-
+        // Extra variables you want
         extract($context);
 
         // Require file and hold the result for subsequent request.
@@ -208,7 +218,6 @@ final class Sys
 
     public static function shutdown()
     {
-        unset(self::$requiredFiles);
         self::$app->terminate();
         unset(self::$app);
     }
